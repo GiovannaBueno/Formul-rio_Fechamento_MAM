@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Máscara de Fechamento</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 40px 20px;
+      text-align: left;
+      background-color: #1a1a1a;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    h2, h3 {
+      color: #FFA500;
+      text-align: center;
+    }
+
+    select, input[type="text"], input[type="date"], textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background-color: #1e1e1e;
+      color: #ffffff;
+      font-size: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      color: #cccccc;
+    }
+
+    .formulario {
+      display: none;
+      background-color: #1a1a1a;
+      padding: 20px 0;
+      border-radius: 8px;
+      border-top: 1px solid #292929;
+    }
+
+    .equipamento {
+      border: 1px solid #333;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      background-color: #2a2a2a;
+    }
+
+    #resultado {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #1e1e1e;
+      border-radius: 8px;
+      border: 1px solid #292929;
+      white-space: pre-wrap;
+    }
+
+    .btn {
+      background-color: #FFA500;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      background-color: #e69500;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Selecionar Cliente</h2>
+
+  <select id="cliente" onchange="mostrarFormulario()">
+    <option value="">-- Selecione um cliente --</option>
+    <option value="coleta">COLETA</option>
+    <option value="cliente2">Cliente 2 - Empresa B</option>
+  </select>
+
+  <!-- Formulário COLETA -->
+  <div id="form_coleta" class="formulario">
+    <h3>Formulário - COLETA</h3>
+    <label>Técnico:
+      <input type="text" id="tecnico" oninput="gerarTexto('coleta')" />
+    </label>
+
+    <button type="button" class="btn" onclick="adicionarEquipamento()">Adicionar Equipamento</button>
+    <div id="equipamentosContainer">
+  </div>
+
+  <label>Observação:
+<textarea id="N/A" rows="5" oninput="gerarTexto('coleta')"></textarea>
+</label></div>
+
+  <!-- Formulário Cliente 2 -->
+  <div id="form_cliente2" class="formulario">
+    <h3>Formulário - Cliente 2</h3>
+    <label>Responsável:
+      <input type="text" id="responsavel2" oninput="gerarTexto('cliente2')" />
+    </label>
+    <label>Setor:
+      <input type="text" id="setor2" oninput="gerarTexto('cliente2')" />
+    </label>
+    <label>Data da reunião:
+      <input type="date" id="data2" oninput="gerarTexto('cliente2')" />
+    </label>
+  </div>
+
+  <div id="resultado"></div>
+
+  <button class="btn" id="btnCopiar" style="display:none;" onclick="copiarTexto()">Copiar texto</button>
+  <span id="copiado" style="display:none; margin-left:10px; color: #FFA500;">✔ Copiado!</span>
+</div>
+
+<script>
+  const modelosPorFabricante = {
+    "Chip CLARO": ["Modelo A1", "Modelo A2", "Modelo A3"],
+    "Chip OI": ["Modelo B1", "Modelo B2"],
+    "Chip TIM": ["Modelo C1", "Modelo C2", "Modelo C3"],
+    "Chip VIVO": ["Modelo D1"],
+    "Aligera": ["Aligera Modelo 1", "Aligera Modelo 2"],
+    "Aruba": ["Aruba Modelo 1", "Aruba Modelo 2"],
+    "Blockbit": ["Blockbit Modelo X"],
+    "Cisco": ["Cisco Modelo 100", "Cisco Modelo 200"],
+    "Datacom": ["Datacom Modelo 1"],
+    "Dell": ["Dell Inspiron", "Dell XPS"],
+    "D-link": ["D-link Modelo 1"],
+    "Fortinet": ["Fortinet Modelo 1", "Fortinet Modelo 2"],
+    "HP": ["HP Modelo 1", "HP Modelo 2"],
+    "Huawei": ["Huawei Modelo 1"],
+    "Lenovo": ["Lenovo Modelo 1", "Lenovo Modelo 2"],
+    "Meraki": ["Meraki Modelo 1"],
+    "Mikrotik": ["Mikrotik Modelo 1", "Mikrotik Modelo 2"],
+    "NetStation": ["NetStation Modelo 1"],
+    "Ruckus": ["Ruckus Modelo 1"]
+  };
+
+  function mostrarFormulario() {
+    const clienteSelecionado = document.getElementById("cliente").value;
+    document.querySelectorAll(".formulario").forEach(f => f.style.display = "none");
+
+    if (clienteSelecionado === "coleta") {
+      document.getElementById("form_coleta").style.display = "block";
+    } else if (clienteSelecionado === "cliente2") {
+      document.getElementById("form_cliente2").style.display = "block";
+    }
+
+    gerarTexto(clienteSelecionado);
+  }
+
+  let equipamentoIndex = 0;
+
+  function adicionarEquipamento() {
+    const container = document.getElementById("equipamentosContainer");
+    equipamentoIndex++;
+
+    const div = document.createElement("div");
+    div.className = "equipamento";
+    div.id = `equip-${equipamentoIndex}`;
+
+    div.innerHTML = `
+      <label>Fabricante:
+        <select onchange="atualizarModelos(this); gerarTexto('coleta')">
+          <option value="">-- Selecione --</option>
+          ${Object.keys(modelosPorFabricante).map(fab => `<option value="${fab}">${fab}</option>`).join('')}
+        </select>
+      </label>
+      <label>Modelo:
+        <select onchange="gerarTexto('coleta')">
+          <option value="">-- Selecione um fabricante primeiro --</option>
+        </select>
+      </label>
+      <label>Serial:
+        <input type="text" oninput="gerarTexto('coleta')" />
+      </label>
+    `;
+
+    container.appendChild(div);
+    gerarTexto("coleta");
+  }
+
+  function atualizarModelos(selectFabricante) {
+    const equipamento = selectFabricante.closest(".equipamento");
+    const modeloSelect = equipamento.querySelectorAll("select")[1];
+    modeloSelect.innerHTML = "";
+
+    const fabricanteSelecionado = selectFabricante.value;
+    if (modelosPorFabricante[fabricanteSelecionado]) {
+      modelosPorFabricante[fabricanteSelecionado].forEach(modelo => {
+        const option = document.createElement("option");
+        option.value = modelo;
+        option.textContent = modelo;
+        modeloSelect.appendChild(option);
+      });
+    } else {
+      modeloSelect.innerHTML = `<option value="">-- Selecione um fabricante primeiro --</option>`;
+    }
+  }
+
+  function gerarTexto(cliente) {
+    let texto = "";
+
+    if (cliente === "coleta") {
+      const tecnico = document.getElementById("tecnico").value || "[não informado]";
+      const observacao = document.getElementById("N/A").value || "[N/A]";
+
+      texto = `Técnico: ${tecnico}\n\nDescrição da Atividade:\nRealizada a coleta do(s) equipamento(s) abaixo, conforme solicitação.\n\nObservação: ${observacao}\n\n`;
+
+      const equipamentos = document.querySelectorAll("#equipamentosContainer .equipamento");
+
+      equipamentos.forEach((equip, idx) => {
+        const fabricante = equip.querySelectorAll("select")[0].value || "[fabricante]";
+        const modelo = equip.querySelectorAll("select")[1].value || "[modelo]";
+        const serial = equip.querySelector("input").value || "[serial]";
+
+        texto += `\nEquipamento ${idx + 1}:\n- Fabricante: ${fabricante}\n- Modelo: ${modelo}\n- Serial: ${serial}\n`;
+      });
+
+    } else if (cliente === "cliente2") {
+      const responsavel = document.getElementById("responsavel2").value || "[responsável]";
+      const setor = document.getElementById("setor2").value || "[setor]";
+      const data = document.getElementById("data2").value || "[data]";
+
+      texto = `O responsável ${responsavel}, do setor ${setor}, participou da reunião realizada em ${data} conforme agenda da Empresa B.`;
+    }
+
+    document.getElementById("resultado").innerText = texto;
+
+    const btn = document.getElementById("btnCopiar");
+    btn.style.display = texto.trim() ? "inline-block" : "none";
+  }
+
+  function copiarTexto() {
+    const resultado = document.getElementById("resultado").innerText;
+    if (!resultado.trim()) return;
+
+    navigator.clipboard.writeText(resultado).then(() => {
+      const aviso = document.getElementById("copiado");
+      aviso.style.display = "inline";
+      setTimeout(() => aviso.style.display = "none", 2000);
+    });
+  }
+</script>
+
+</body>
+</html>
